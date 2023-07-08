@@ -48,7 +48,7 @@ class TkConan(ConanFile):
     def requirements(self):
         self.requires("tcl/{}".format(self.version), transitive_headers=True)
         if self.settings.os == "Linux":
-            self.requires("fontconfig/2.13.93")
+            self.requires("fontconfig/2.14.2")
             self.requires("xorg/system")
             if not self.options.disable_xft:
                 self.requires("libxft/2.3.6")
