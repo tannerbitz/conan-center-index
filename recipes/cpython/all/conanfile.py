@@ -157,10 +157,10 @@ class CPythonConan(ConanFile):
         if self._is_py3:
             tc.configure_args.extend([
                 "--with-system-libmpdec",
-                "--with-openssl={}".format(self.deps_cpp_info["openssl"].rootpath),
-                "--enable-loadable-sqlite-extensions={}".format(yes_no(not self.options["sqlite3"].omit_load_extension)),
+                "--with-openssl={}".format(self.dependencies["openssl"].package_folder),
+                "--enable-loadable-sqlite-extensions={}".format(yes_no(not self.dependencies["sqlite3"].options.omit_load_extension)),
             ])
-        if self.settings.compiler == "intel":
+        if self.settings.compiler == "intel-cc":
             tc.configure_args.extend(["--with-icc"])
         if self.settings.compiler != "gcc":
             tc.configure_args.append("--without-gcc")
@@ -200,7 +200,7 @@ class CPythonConan(ConanFile):
             if not self.options.shared and Version(self.version) >= "3.10":
                 raise ConanInvalidConfiguration("Static msvc build disabled (>=3.10) due to \"AttributeError: module 'sys' has no attribute 'winver'\"")
 
-        if self.options.get_safe("with_curses", False) and not self.options["ncurses"].with_widec:
+        if self.options.get_safe("with_curses", False) and not self.dependencies["ncurses"].options.with_widec:
             raise ConanInvalidConfiguration("cpython requires ncurses with wide character support")
 
         if self._supports_modules:
@@ -232,12 +232,12 @@ class CPythonConan(ConanFile):
         basic_layout(self, src_folder="src")
 
     def requirements(self):
-        self.requires("zlib/1.2.11")
+        self.requires("zlib/1.2.13")
         if self._supports_modules:
-            self.requires("openssl/1.1.1l")
-            self.requires("expat/2.4.1")
+            self.requires("openssl/1.1.1u")
+            self.requires("expat/2.5.0")
             if self._with_libffi:
-                self.requires("libffi/3.2.1")
+                self.requires("libffi/3.3")
             if Version(self.version) < "3.8":
                 self.requires("mpdecimal/2.4.2")
             elif Version(self.version) < "3.10":
@@ -528,7 +528,7 @@ class CPythonConan(ConanFile):
                 self._msvc_package_layout()
             tools.remove_files_by_mask(os.path.join(self.package_folder, "bin"), "vcruntime*")
         else:
-            autotools = self._configure_autotools()
+            autotools = Autotools(self)
             autotools.install()
             rmdir(self, os.path.join(self.package_folder, "lib", "pkgconfig"))
             rmdir(self, os.path.join(self.package_folder, "share"))
