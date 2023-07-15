@@ -28,7 +28,7 @@ class libxftConan(ConanFile):
     def requirements(self):
         self.requires("xorg/system")
         self.requires("freetype/2.13.0", transitive_headers=True)
-        self.requires("fontconfig/2.14.2")
+        self.requires("fontconfig/2.14.2", transitive_headers=True)
 
     def build_requirements(self):
         self.tool_requires("pkgconf/1.9.3")
@@ -69,7 +69,6 @@ class libxftConan(ConanFile):
         # generate dependencies for autotools
         tc = AutotoolsDeps(self)
         tc.generate()
-
 
 
     def build(self):
