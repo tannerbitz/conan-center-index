@@ -1,11 +1,12 @@
 from conan import ConanFile
 from conan.tools.layout import basic_layout
 from conan.tools.files import get, replace_in_file, rmdir, copy
-from conan.tools.env import VirtualRunEnv
+from conan.tools.env import VirtualRunEnv, VirtualBuildEnv
 from conan.tools.apple import is_apple_os
-from conan.tools.gnu import AutotoolsToolchain, Autotools
+from conan.tools.gnu import AutotoolsToolchain, Autotools, PkgConfigDeps, AutotoolsDeps
 from conan.tools.microsoft import unix_path, is_msvc
 from conan.tools.scm import Version
+from conan.tools.build import cross_building
 from conans.errors import ConanException, ConanInvalidConfiguration, ConanExceptionInUserConanfileMethod
 import os
 
@@ -187,6 +188,14 @@ class TkConan(ConanFile):
         return ["TCL_GENERIC_DIR={}".format(os.path.join(self._tcl_root, "include")).replace("\\", "/")]
 
     def generate(self):
+        env = VirtualBuildEnv(self)
+        env.generate()
+        # inject requires env vars in build scope
+        # it's required in case of native build when there is AutotoolsDeps & at least one dependency which might be shared, because configure tries to run a test executable
+        if not cross_building(self):
+            env = VirtualRunEnv(self)
+            env.generate(scope="build")
+
         tclConfigShFolder = os.path.join(self._tcl_root, "lib").replace("\\", "/")
 
         tc = AutotoolsToolchain(self)
@@ -208,6 +217,13 @@ class TkConan(ConanFile):
 
         if self.settings.os == "Windows":
             tc.extra_defines.extend(["UNICODE", "_UNICODE", "_ATL_XP_TARGETING", ])
+        tc.generate()
+
+        # generate pkg-config files of dependencies (useless if upstream configure.ac doesn't rely on PKG_CHECK_MODULES macro)
+        tc = PkgConfigDeps(self)
+        tc.generate()
+        # generate dependencies for autotools
+        tc = AutotoolsDeps(self)
         tc.generate()
 
     def build(self):
